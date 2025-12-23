@@ -18,7 +18,7 @@ public class BotInstance extends ListenerAdapter {
 
   public BotInstance(BotInstanceConfig config) {
     this.config = config;
-    this.commandManager = new CommandManager();
+    this.commandManager = new CommandManager(config.getPrefix());
   }
 
   /**

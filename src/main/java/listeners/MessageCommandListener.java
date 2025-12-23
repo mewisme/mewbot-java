@@ -76,6 +76,12 @@ public class MessageCommandListener extends ListenerAdapter {
 
     // Execute command using the command's executeMessage method
     try {
+      // Track command usage for statistics
+      if (event.isFromGuild()) {
+        managers.DatabaseManager.getInstance().recordCommandUsage(
+            event.getGuild().getId(), commandName);
+      }
+      
       command.executeMessage(event, args);
       logger.info("Command {} executed via message by {} in {}",
           commandName, event.getAuthor().getAsTag(),

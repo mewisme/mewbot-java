@@ -3,6 +3,7 @@ package bot;
 import listeners.MessageCommandListener;
 import listeners.SlashCommandListener;
 import listeners.VoiceReconnectListener;
+import listeners.VoiceTrackingListener;
 import managers.CommandManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -36,10 +37,11 @@ public class JdaBuilderHelper {
     }
 
     VoiceReconnectListener voiceReconnectListener = new VoiceReconnectListener();
+    VoiceTrackingListener voiceTrackingListener = new VoiceTrackingListener();
 
     return JDABuilder.createDefault(token)
         .setActivity(activity)
-        .addEventListeners(slashListener, messageListener, voiceReconnectListener)
+        .addEventListeners(slashListener, messageListener, voiceReconnectListener, voiceTrackingListener)
         .setMemberCachePolicy(MemberCachePolicy.NONE)
         .enableIntents(
             GatewayIntent.GUILD_VOICE_STATES,

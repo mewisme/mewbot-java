@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import managers.DatabaseManager;
 import managers.VoiceManager;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
@@ -91,11 +92,12 @@ public class LofiCommand extends Command {
         // Start playing the track
         player.startTrack(track, false);
 
-        // Set volume to 50%
-        player.setVolume(50);
+        // Set volume from database (default 50%)
+        int volume = DatabaseManager.getInstance().getGuildVolume(event.getGuild().getId());
+        player.setVolume(volume);
 
         event.getHook().editOriginalEmbeds(EmbedUtils.createMusicEmbed(SUCCESS_MESSAGE, event.getUser())).queue();
-        logger.info("Started playing lofi stream in guild: {}", event.getGuild().getName());
+        logger.info("Started playing lofi stream in guild: {} at {}% volume", event.getGuild().getName(), volume);
       }
 
       @Override
@@ -107,10 +109,13 @@ public class LofiCommand extends Command {
         }
 
         player.startTrack(firstTrack, false);
-        player.setVolume(50);
+        
+        // Set volume from database (default 50%)
+        int volume = DatabaseManager.getInstance().getGuildVolume(event.getGuild().getId());
+        player.setVolume(volume);
 
         event.getHook().editOriginalEmbeds(EmbedUtils.createMusicEmbed(SUCCESS_MESSAGE, event.getUser())).queue();
-        logger.info("Started playing lofi playlist in guild: {}", event.getGuild().getName());
+        logger.info("Started playing lofi playlist in guild: {} at {}% volume", event.getGuild().getName(), volume);
       }
 
       @Override
@@ -194,9 +199,13 @@ public class LofiCommand extends Command {
                 @Override
                 public void trackLoaded(AudioTrack track) {
                   player.startTrack(track, false);
-                  player.setVolume(50);
+                  
+                  // Set volume from database (default 50%)
+                  int volume = DatabaseManager.getInstance().getGuildVolume(event.getGuild().getId());
+                  player.setVolume(volume);
+                  
                   reply.editMessageEmbeds(EmbedUtils.createMusicEmbed(SUCCESS_MESSAGE, event.getAuthor())).queue();
-                  logger.info("Started playing lofi stream in guild: {}", event.getGuild().getName());
+                  logger.info("Started playing lofi stream in guild: {} at {}% volume", event.getGuild().getName(), volume);
                 }
 
                 @Override
@@ -206,7 +215,11 @@ public class LofiCommand extends Command {
                     firstTrack = playlist.getTracks().get(0);
                   }
                   player.startTrack(firstTrack, false);
-                  player.setVolume(50);
+                  
+                  // Set volume from database (default 50%)
+                  int volume = DatabaseManager.getInstance().getGuildVolume(event.getGuild().getId());
+                  player.setVolume(volume);
+                  
                   reply.editMessageEmbeds(EmbedUtils.createMusicEmbed(SUCCESS_MESSAGE, event.getAuthor())).queue();
                   logger.info("Started playing lofi playlist in guild: {}", event.getGuild().getName());
                 }

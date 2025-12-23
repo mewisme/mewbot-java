@@ -53,6 +53,12 @@ public class SlashCommandListener extends ListenerAdapter {
     }
 
     try {
+      // Track command usage for statistics
+      if (event.isFromGuild()) {
+        managers.DatabaseManager.getInstance().recordCommandUsage(
+            event.getGuild().getId(), event.getName());
+      }
+      
       command.execute(event);
     } catch (Exception e) {
       logger.error("Error executing command: {}", event.getName(), e);

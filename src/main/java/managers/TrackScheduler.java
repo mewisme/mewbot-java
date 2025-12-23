@@ -14,6 +14,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import net.dv8tion.jda.api.entities.Guild;
+
 /**
  * Scheduler for audio tracks that handles looping and track end events.
  */
@@ -23,14 +25,38 @@ public class TrackScheduler extends AudioEventAdapter {
   private final AudioPlayer player;
   private String streamUrl;
   private boolean shouldLoop;
+  private Guild guild; // Guild for tracking
+  private long trackStartTime; // Track start time for statistics
 
   public TrackScheduler(AudioPlayer player) {
     this.player = player;
     this.shouldLoop = false;
   }
 
+  public void setGuild(Guild guild) {
+    this.guild = guild;
+  }
+
+  @Override
+  public void onTrackStart(AudioPlayer eventPlayer, AudioTrack track) {
+    // Track playback start time for statistics
+    if (guild != null) {
+      trackStartTime = System.currentTimeMillis() / 1000;
+      VoiceManager.getInstance().setGuildPlaybackStartTime(guild, trackStartTime);
+    }
+  }
+
   @Override
   public void onTrackEnd(AudioPlayer eventPlayer, AudioTrack track, AudioTrackEndReason endReason) {
+    // Record playback time for statistics
+    if (guild != null && trackStartTime > 0) {
+      long duration = (System.currentTimeMillis() / 1000) - trackStartTime;
+      if (duration > 0) {
+        managers.DatabaseManager.getInstance().addGuildPlaybackTime(guild.getId(), duration);
+      }
+      trackStartTime = 0;
+    }
+
     // If track ended naturally and we should loop, restart it
     if (endReason.mayStartNext && shouldLoop && streamUrl != null) {
       logger.info("Track ended, restarting stream: {}", streamUrl);

@@ -82,7 +82,7 @@ mvn exec:java
 
 **Option 2: Run the JAR file:**
 ```bash
-java -jar target/discord-bot-java-1.0-SNAPSHOT.jar
+java -jar target/mewbot-java.jar
 ```
 
 **Option 3: Run with environment variable (if not using .env):**
@@ -103,7 +103,7 @@ DISCORD_BOT_TOKEN=your_token mvn exec:java
 |---------|-------------|
 | `mvn clean package` | Build the project and create JAR file |
 | `mvn exec:java` | Run the bot directly (no JAR needed) |
-| `java -jar target/discord-bot-java-1.0-SNAPSHOT.jar` | Run the built JAR file |
+| `java -jar target/mewbot-java.jar` | Run the built JAR file |
 | `mvn clean` | Clean build artifacts |
 | `mvn compile` | Compile the project only |
 

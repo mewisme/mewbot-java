@@ -27,6 +27,8 @@ public class VoiceManager {
   // Store voice channel info for reconnection
   private final Map<Long, Long> guildVoiceChannels; // guildId -> voiceChannelId
   private final Map<Long, AudioTrack> guildPlayingTracks; // guildId -> track (for resume)
+  // Track playback start time per guild for statistics
+  private final Map<Long, Long> guildPlaybackStartTime; // guildId -> startTimestamp
 
   private VoiceManager() {
     this.playerManager = new DefaultAudioPlayerManager();
@@ -34,6 +36,7 @@ public class VoiceManager {
     this.guildAudioManagers = new HashMap<>();
     this.guildVoiceChannels = new HashMap<>();
     this.guildPlayingTracks = new HashMap<>();
+    this.guildPlaybackStartTime = new HashMap<>();
 
     // Configure player manager
     playerManager.getConfiguration().setFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
@@ -176,11 +179,77 @@ public class VoiceManager {
   }
 
   /**
+   * Sets the playback start time for a guild (for statistics).
+   *
+   * @param guild     The guild
+   * @param startTime Start timestamp in seconds
+   */
+  public void setGuildPlaybackStartTime(Guild guild, long startTime) {
+    guildPlaybackStartTime.put(guild.getIdLong(), startTime);
+  }
+
+  /**
+   * Sets the volume for a guild's audio player.
+   *
+   * @param guild  The guild
+   * @param volume Volume (0-100)
+   * @return true if volume was set successfully, false otherwise
+   */
+  public boolean setVolume(Guild guild, int volume) {
+    try {
+      // Clamp volume to 0-100
+      volume = Math.max(0, Math.min(100, volume));
+
+      AudioPlayer player = getPlayer(guild);
+      if (player != null) {
+        player.setVolume(volume);
+
+        // Save to database
+        DatabaseManager.getInstance().setGuildVolume(guild.getId(), volume);
+
+        logger.info("Set volume to {}% for guild: {}", volume, guild.getName());
+        return true;
+      }
+    } catch (Exception e) {
+      logger.error("Failed to set volume", e);
+    }
+    return false;
+  }
+
+  /**
+   * Gets the current volume for a guild's audio player.
+   *
+   * @param guild The guild
+   * @return Current volume (0-100), or default from database if player not found
+   */
+  public int getVolume(Guild guild) {
+    try {
+      AudioPlayer player = getPlayer(guild);
+      if (player != null) {
+        return player.getVolume();
+      }
+    } catch (Exception e) {
+      logger.error("Failed to get volume", e);
+    }
+    // Fallback to database if player not initialized
+    return DatabaseManager.getInstance().getGuildVolume(guild.getId());
+  }
+
+  /**
    * Stops playback and cleans up resources for a guild.
    *
    * @param guild The guild to clean up
    */
   public void cleanup(Guild guild) {
+    // Record final playback time before cleanup
+    Long startTime = guildPlaybackStartTime.remove(guild.getIdLong());
+    if (startTime != null && startTime > 0) {
+      long duration = (System.currentTimeMillis() / 1000) - startTime;
+      if (duration > 0) {
+        DatabaseManager.getInstance().addGuildPlaybackTime(guild.getId(), duration);
+      }
+    }
+
     GuildAudioManager guildManager = guildAudioManagers.remove(guild.getIdLong());
     if (guildManager != null) {
       guildManager.getPlayer().destroy();
@@ -241,17 +310,21 @@ public class VoiceManager {
       if (storedTrack != null) {
         GuildAudioManager guildManager = getGuildAudioManager(guild);
         if (guildManager != null) {
+          // Restore volume from database
+          int volume = DatabaseManager.getInstance().getGuildVolume(guild.getId());
+          guildManager.getPlayer().setVolume(volume);
+
           // Check if scheduler was looping
           TrackScheduler scheduler = guildManager.getScheduler();
           if (scheduler != null && scheduler.isLooping()) {
             // Resume looping
             scheduler.setStreamUrl(storedTrack.getInfo().uri);
             guildManager.getPlayer().startTrack(storedTrack.makeClone(), false);
-            logger.info("Resumed playback after reconnection in guild: {}", guild.getName());
+            logger.info("Resumed playback after reconnection in guild: {} at {}% volume", guild.getName(), volume);
           } else {
             // Just resume the track
             guildManager.getPlayer().startTrack(storedTrack.makeClone(), false);
-            logger.info("Resumed track after reconnection in guild: {}", guild.getName());
+            logger.info("Resumed track after reconnection in guild: {} at {}% volume", guild.getName(), volume);
           }
         }
       }
