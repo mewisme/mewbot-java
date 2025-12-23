@@ -84,4 +84,22 @@ public class TrackScheduler extends AudioEventAdapter {
     this.shouldLoop = false;
     this.streamUrl = null;
   }
+
+  /**
+   * Checks if looping is enabled.
+   *
+   * @return true if looping, false otherwise
+   */
+  public boolean isLooping() {
+    return shouldLoop;
+  }
+
+  /**
+   * Gets the stream URL.
+   *
+   * @return Stream URL, or null if not set
+   */
+  public String getStreamUrl() {
+    return streamUrl;
+  }
 }

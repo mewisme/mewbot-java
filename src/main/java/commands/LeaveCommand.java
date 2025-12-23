@@ -45,6 +45,7 @@ public class LeaveCommand extends Command {
 
     // Disconnect from voice channel
     voiceManager.disconnectFromVoiceChannel(event.getGuild());
+    voiceManager.removeVoiceChannelInfo(event.getGuild()); // Remove stored info since user explicitly left
     voiceManager.cleanup(event.getGuild());
 
     event.replyEmbeds(EmbedUtils.createSuccessEmbed("✅ Successfully left the voice channel!", event.getUser()))
@@ -79,6 +80,7 @@ public class LeaveCommand extends Command {
 
     // Disconnect from voice channel
     voiceManager.disconnectFromVoiceChannel(event.getGuild());
+    voiceManager.removeVoiceChannelInfo(event.getGuild()); // Remove stored info since user explicitly left
     voiceManager.cleanup(event.getGuild());
 
     event.getMessage()
